@@ -8,6 +8,7 @@
 #include <linux/timer.h>
 #include <linux/input.h>
 #include <linux/io.h>
+#include <linux/module.h>
 #include <linux/touchpaint.h>
 
 #define MAX_FINGERS 10
@@ -25,7 +26,9 @@ static int fb_width = 1080;
 static int fb_height = 2340;
 /* true = fill screen, false = paint */
 static bool fill_on_touch = false;
+module_param(fill_on_touch, bool, 0644);
 static int paint_radius = 3; /* pixels, must be odd */
+module_param(paint_radius, int, 0644);
 
 /* State */
 static u32 __iomem *fb_mem;
