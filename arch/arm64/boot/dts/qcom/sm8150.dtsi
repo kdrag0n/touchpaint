@@ -708,7 +708,8 @@
 
 		cont_splash_memory: cont_splash_region {
 			reg = <0x0 0x9c000000 0x0 0x02400000>;
-			label = "cont_splash_region";
+			no-map;
+			label = "not_cont_splash_region";
 		};
 
 		disp_rdump_memory: disp_rdump_region {
