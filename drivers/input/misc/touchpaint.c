@@ -36,7 +36,11 @@ static struct point last_point[MAX_FINGERS];
 
 static void blank_screen(void)
 {
+	u64 before = ktime_get_ns();
+	u64 delta;
 	memset_io(fb_mem, 0, fb_size);
+	delta = ktime_get_ns() - before;
+	pr_info("TPM: [blank] %llu ns to fill %zu bytes\n", delta, fb_size);
 }
 
 static void blank_callback(unsigned long data)
@@ -47,7 +51,11 @@ static DEFINE_TIMER(blank_timer, blank_callback, 0, 0);
 
 static void fill_screen_white(void)
 {
+	u64 before = ktime_get_ns();
+	u64 delta;
 	memset_io(fb_mem, 0xffffffff, fb_size);
+	delta = ktime_get_ns() - before;
+	pr_info("TPM: [fill] %llu ns to fill %zu bytes\n", delta, fb_size);
 }
 
 static void set_pixel(int x, int y, u8 r, u8 g, u8 b)
