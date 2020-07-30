@@ -38,7 +38,7 @@ static void blank_screen(void)
 {
 	u64 before = ktime_get_ns();
 	u64 delta;
-	memset_io(fb_mem, 0, fb_size);
+	memset(fb_mem, 0, fb_size);
 	delta = ktime_get_ns() - before;
 	pr_info("TPM: [blank] %llu ns to fill %zu bytes\n", delta, fb_size);
 }
@@ -53,7 +53,7 @@ static void fill_screen_white(void)
 {
 	u64 before = ktime_get_ns();
 	u64 delta;
-	memset_io(fb_mem, 0xffffffff, fb_size);
+	memset(fb_mem, 0xffffffff, fb_size);
 	delta = ktime_get_ns() - before;
 	pr_info("TPM: [fill] %llu ns to fill %zu bytes\n", delta, fb_size);
 }
@@ -68,7 +68,7 @@ static void set_pixel(int x, int y, u8 r, u8 g, u8 b)
 
 	pr_debug("set pixel: x=%d y=%d offset=%zupx color=(%d, %d, %d)\n", x, y,
 		 offset_px, r, g, b);
-	__raw_writel(pixel, fb_mem + offset_px);
+	*(volatile u32 *)(fb_mem + offset_px) = pixel;
 }
 
 static void draw_point(int x, int y)
@@ -169,7 +169,7 @@ static int __init touchpaint_init(void)
 {
 	pr_info("initializing...\n");
 
-	fb_mem = ioremap(fb_phys_addr, fb_max_size);
+	fb_mem = ioremap_wc(fb_phys_addr, fb_max_size);
 	if (!fb_mem) {
 		pr_err("ioremap failed!\n");
 		return -ENOMEM;
