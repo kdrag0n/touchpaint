@@ -63,7 +63,7 @@ static void fill_screen_white(void)
 
 static size_t point_to_offset(int x, int y)
 {
-	return (x - 1) + ((y * fb_width) - 1);
+	return x + (y * fb_width);
 }
 
 static u32 rgb_to_pixel(u8 r, u8 g, u8 b)
@@ -129,7 +129,7 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 static void draw_segment(int x, int y)
 {
 	int base_x = clamp(x - max(1, (paint_radius - 1) / 2), 0, fb_width);
-	int target_x = base_x + paint_radius;
+	int target_x = min(base_x + paint_radius, fb_width);
 	int cur_x = base_x;
 
 	pr_debug("draw segment: x=%d y=%d\n", x, y);
