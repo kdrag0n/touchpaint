@@ -27,7 +27,7 @@ static int fb_height = 2340;
 /* true = fill screen, false = paint */
 static bool fill_on_touch = false;
 module_param(fill_on_touch, bool, 0644);
-static int paint_radius = 3; /* pixels, must be odd */
+static int paint_radius = 3; /* pixels, must be odd for centering to work correctly */
 module_param(paint_radius, int, 0644);
 
 /* State */
