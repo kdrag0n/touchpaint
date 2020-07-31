@@ -61,27 +61,63 @@ static void fill_screen_white(void)
 	pr_info("TPM: [fill] %llu ns to fill %zu bytes on cpu%d\n", delta, fb_size, smp_processor_id());
 }
 
-static void set_pixel(int x, int y, u8 r, u8 g, u8 b)
+static size_t point_to_offset(int x, int y)
 {
-	size_t offset_px = (x - 1) + ((y * fb_width) - 1);
+	return (x - 1) + ((y * fb_width) - 1);
+}
+
+static u32 rgb_to_pixel(u8 r, u8 g, u8 b)
+{
 	u32 pixel = 0xff000000;
 	pixel |= r << 16;
 	pixel |= g << 8;
 	pixel |= b;
 
-	pr_debug("set pixel: x=%d y=%d offset=%zupx color=(%d, %d, %d)\n", x, y,
-		 offset_px, r, g, b);
+	return pixel;
+}
+
+static void set_pixel(size_t offset_px, u32 pixel)
+{
 	*(volatile u32 *)(fb_mem + offset_px) = pixel;
+}
+
+static void set_2pixels(size_t offset_px, u32 pixel)
+{
+	u64 pixels = ((u64)pixel << 32) | pixel;
+	*(volatile u64 *)(fb_mem + offset_px) = pixels;
+}
+
+static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
+{
+	size_t offset_px = point_to_offset(x, y);
+	u32 pixel = rgb_to_pixel(r, g, b);
+
+	pr_debug("set pixel: x=%d y=%d offset=%zupx count=%d color=(%d, %d, %d)\n",
+		 x, y, offset_px, count, r, g, b);
+
+	if (count >= 2) {
+		set_2pixels(offset_px, pixel);
+		return 2;
+	}
+
+	if (count >= 1) {
+		set_pixel(offset_px, pixel);
+		return 1;
+	}
+
+	return 0;
 }
 
 static void draw_segment(int x, int y)
 {
 	int base_x = clamp(x - max(1, (paint_radius - 1) / 2), 0, fb_width);
-	int off_x;
+	int target_x = base_x + paint_radius;
+	int cur_x = base_x;
 
 	pr_debug("draw segment: x=%d y=%d\n", x, y);
-	for (off_x = 0; off_x < paint_radius; off_x++) {
-		set_pixel(base_x + off_x, y, 255, 255, 255);
+	while (cur_x < target_x) {
+		int remaining_px = target_x - cur_x;
+		cur_x += draw_pixels(cur_x, y, remaining_px, 255, 255, 255);
 	}
 }
 
