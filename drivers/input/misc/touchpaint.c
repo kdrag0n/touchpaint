@@ -97,7 +97,7 @@ static void draw_point(int x, int y)
 		draw_segment(x, base_y + off_y);
 	}
 
-	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
+	pr_info("draw point took %llu ns\n", ktime_get_ns() - before);
 }
 
 void touchpaint_finger_down(int slot)
