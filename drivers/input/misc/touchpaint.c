@@ -5,11 +5,18 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/delay.h>
+#include <linux/kthread.h>
 #include <linux/timer.h>
 #include <linux/input.h>
 #include <linux/io.h>
 #include <linux/module.h>
+#include <linux/version.h>
 #include <linux/touchpaint.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+#include <uapi/linux/sched/types.h>
+#endif
 
 #define MAX_FINGERS 10
 
@@ -18,15 +25,20 @@ struct point {
 	int y;
 };
 
+enum tp_mode {
+	MODE_PAINT,
+	MODE_FILL,
+	MODE_BOX
+};
+
 /* Config */
 static phys_addr_t fb_phys_addr = 0x9c000000;
 static size_t fb_max_size = 0x02400000;
 /* Pixel format is assumed to be ARGB_8888 */
 static int fb_width = 1080;
 static int fb_height = 2340;
-/* true = fill screen, false = paint */
-static bool fill_on_touch = false;
-module_param(fill_on_touch, bool, 0644);
+static enum tp_mode mode = MODE_PAINT;
+module_param(mode, int, 0644);
 /* Brush size in pixels - odd = slower but centered, even = faster but not centered */
 static int brush_size = 2;
 module_param(brush_size, int, 0644);
@@ -38,6 +50,7 @@ static bool init_done;
 static unsigned int fingers;
 static bool finger_down[MAX_FINGERS];
 static struct point last_point[MAX_FINGERS];
+static struct task_struct *box_thread;
 
 static void blank_screen(void)
 {
@@ -157,6 +170,83 @@ static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
 }
 
+static void fill_screen(u8 r, u8 g, u8 b)
+{
+	int y;
+
+	for (y = 0; y < fb_height; y++) {
+		int x = 0;
+
+		while (x < fb_width) {
+			x += draw_pixels(x, y, fb_width - x, r, g, b);
+		}
+	}
+}
+
+static int box_thread_func(void *data)
+{
+	static const struct sched_param rt_prio = { .sched_priority = 1 };
+	int x = fb_width / 2;
+	int y = fb_height / 12;
+	int step = 7;
+	int size = 301;
+	int radius = max(1, (size - 1) / 2);
+
+	sched_setscheduler_nocheck(current, SCHED_FIFO, &rt_prio);
+
+	fill_screen(64, 0, 128);
+	draw_point(x, y, size, 255, 255, 0);
+
+	while (!kthread_should_stop()) {
+		int off_y;
+
+		if (y > fb_height - (fb_height / 12) || y < fb_height / 12)
+			step *= -1;
+
+		y += step;
+
+		/* Draw damage rather than redrawing the entire box */
+		for (off_y = 0; off_y < abs(step); off_y++) {
+			if (step < 0) {
+				/* Going up */
+				draw_segment(x, y + radius + off_y, size, 64, 0, 128);
+				draw_segment(x, y - radius - off_y, size, 255, 255, 0);
+			} else {
+				/* Going down */
+				draw_segment(x, y - radius - off_y, size, 64, 0, 128);
+				draw_segment(x, y + radius + off_y, size, 255, 255, 0);
+			}
+		}
+
+		usleep_range(8000, 8000);
+	}
+
+	return 0;
+}
+
+static void start_box_thread(void)
+{
+	if (box_thread) {
+		pr_warn("tried to start duplicate box thread!\n");
+		return;
+	}
+
+	box_thread = kthread_run(box_thread_func, NULL, "touchpaint_box");
+	if (IS_ERR(box_thread)) {
+		pr_err("failed to start box thread! err=%d\n", PTR_ERR(box_thread));
+		box_thread = NULL;
+	}
+}
+
+static void stop_box_thread(void)
+{
+	int ret = kthread_stop(box_thread);
+	if (ret)
+		pr_err("failed to stop box thread! err=%d\n", ret);
+
+	box_thread = NULL;
+}
+
 void touchpaint_finger_down(int slot)
 {
 	pr_debug("finger %d down event from driver\n", slot);
@@ -166,11 +256,23 @@ void touchpaint_finger_down(int slot)
 	pr_debug("finger %d down\n", slot);
 	finger_down[slot] = true;
 	if (++fingers == 1) {
-		if (fill_on_touch) {
+		switch (mode) {
+		case MODE_PAINT:
+			blank_screen();
+			break;
+		case MODE_FILL:
 			del_timer(&blank_timer);
 			fill_screen_white();
-		} else {
-			blank_screen();
+			break;
+		case MODE_BOX:
+			if (box_thread) {
+				stop_box_thread();
+				blank_screen();
+			} else {
+				start_box_thread();
+			}
+
+			break;
 		}
 	}
 }
@@ -186,7 +288,7 @@ void touchpaint_finger_up(int slot)
 	last_point[slot].x = 0;
 	last_point[slot].y = 0;
 
-	if (--fingers == 0 && fill_on_touch) {
+	if (--fingers == 0 && mode == MODE_FILL) {
 		mod_timer(&blank_timer, jiffies + msecs_to_jiffies(250));
 	}
 }
@@ -224,7 +326,7 @@ static void draw_line(int x1, int y1, int x2, int y2, u8 r, u8 g, u8 b)
 
 void touchpaint_finger_point(int slot, int x, int y)
 {
-	if (!init_done || !finger_down[slot] || fill_on_touch)
+	if (mode != MODE_PAINT || !init_done || !finger_down[slot])
 		return;
 
 	draw_point(x, y, brush_size, 255, 255, 255);
