@@ -27,7 +27,8 @@ static int fb_height = 2340;
 /* true = fill screen, false = paint */
 static bool fill_on_touch = false;
 module_param(fill_on_touch, bool, 0644);
-static int brush_size = 3; /* pixels, must be odd for centering to work correctly */
+/* Brush size in pixels - odd = slower but centered, even = faster but not centered */
+static int brush_size = 3;
 module_param(brush_size, int, 0644);
 
 /* State */
