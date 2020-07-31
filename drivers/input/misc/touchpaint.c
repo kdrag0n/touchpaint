@@ -43,7 +43,7 @@ static void blank_screen(void)
 	u64 delta;
 	memset(fb_mem, 0, fb_size);
 	delta = ktime_get_ns() - before;
-	pr_info("TPM: [blank] %llu ns to fill %zu bytes\n", delta, fb_size);
+	pr_info("TPM: [blank] %llu ns to fill %zu bytes on cpu%d\n", delta, fb_size, smp_processor_id());
 }
 
 static void blank_callback(unsigned long data)
@@ -58,7 +58,7 @@ static void fill_screen_white(void)
 	u64 delta;
 	memset(fb_mem, 0xffffffff, fb_size);
 	delta = ktime_get_ns() - before;
-	pr_info("TPM: [fill] %llu ns to fill %zu bytes\n", delta, fb_size);
+	pr_info("TPM: [fill] %llu ns to fill %zu bytes on cpu%d\n", delta, fb_size, smp_processor_id());
 }
 
 static void set_pixel(int x, int y, u8 r, u8 g, u8 b)
