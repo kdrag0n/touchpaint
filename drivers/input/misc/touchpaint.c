@@ -33,6 +33,7 @@ module_param(paint_radius, int, 0644);
 /* State */
 static u32 __iomem *fb_mem;
 static size_t fb_size;
+static bool init_done;
 static unsigned int fingers;
 static bool finger_down[MAX_FINGERS];
 static struct point last_point[MAX_FINGERS];
@@ -151,13 +152,13 @@ static void draw_point(int x, int y)
 		draw_segment(x, base_y + off_y);
 	}
 
-	pr_info("draw point took %llu ns\n", ktime_get_ns() - before);
+	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
 }
 
 void touchpaint_finger_down(int slot)
 {
 	pr_debug("finger %d down event from driver\n", slot);
-	if (finger_down[slot])
+	if (!init_done || finger_down[slot])
 		return;
 
 	pr_debug("finger %d down\n", slot);
@@ -175,7 +176,7 @@ void touchpaint_finger_down(int slot)
 void touchpaint_finger_up(int slot)
 {
 	pr_debug("finger %d up event from driver\n", slot);
-	if (!finger_down[slot])
+	if (!init_done || !finger_down[slot])
 		return;
 
 	pr_debug("finger %d up\n", slot);
@@ -221,7 +222,7 @@ static void draw_line(int x1, int y1, int x2, int y2)
 
 void touchpaint_finger_point(int slot, int x, int y)
 {
-	if (!finger_down[slot] || fill_on_touch)
+	if (!init_done || !finger_down[slot] || fill_on_touch)
 		return;
 
 	draw_point(x, y);
@@ -248,6 +249,8 @@ static int __init touchpaint_init(void)
 	pr_info("%dx%d framebuffer spanning %zu bytes at 0x%llx (mapped to 0x%llx)\n",
 		fb_width, fb_height, fb_size, fb_phys_addr, fb_mem);
 	blank_screen();
+
+	init_done = 1;
 	return 0;
 }
 late_initcall_sync(touchpaint_init);
