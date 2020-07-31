@@ -183,6 +183,37 @@ static void fill_screen(u8 r, u8 g, u8 b)
 	}
 }
 
+static void draw_point_damage(int size, int x1, int y1, int x2, int y2,
+			      u8 fg_r, u8 fg_g, u8 fg_b,
+			      u8 bg_r, u8 bg_g, u8 bg_b)
+{
+	int radius = max(1, (size - 1) / 2);
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+	int off_x = 0;
+	int off_y;
+
+	do {
+		for (off_y = 0; off_y < abs(dy); off_y++) {
+			if (dy < 0) {
+				/* Going up */
+				draw_segment(x1 + off_x, y1 + radius + off_y, size,
+					     bg_r, bg_g, bg_b);
+				draw_segment(x1 + off_x, y1 - radius - off_y, size,
+					     fg_r, fg_g, fg_b);
+			} else {
+				/* Going down */
+				draw_segment(x1 + off_x, y1 - radius - off_y, size,
+					     bg_r, bg_g, bg_b);
+				draw_segment(x1 + off_x, y1 + radius + off_y, size,
+					     fg_r, fg_g, fg_b);
+			}
+		}
+
+		off_x++;
+	} while (off_x < abs(dx));
+}
+
 static int box_thread_func(void *data)
 {
 	static const struct sched_param rt_prio = { .sched_priority = 1 };
@@ -190,7 +221,6 @@ static int box_thread_func(void *data)
 	int y = fb_height / 12;
 	int step = 7;
 	int size = 301;
-	int radius = max(1, (size - 1) / 2);
 
 	sched_setscheduler_nocheck(current, SCHED_FIFO, &rt_prio);
 
@@ -198,23 +228,11 @@ static int box_thread_func(void *data)
 	draw_point(x, y, size, 255, 255, 0);
 
 	while (!kthread_should_stop()) {
-		int off_y;
-
 		if (y > fb_height - (fb_height / 12) || y < fb_height / 12)
 			step *= -1;
 
 		/* Draw damage rather than redrawing the entire box */
-		for (off_y = 0; off_y < abs(step); off_y++) {
-			if (step < 0) {
-				/* Going up */
-				draw_segment(x, y + radius + off_y, size, 64, 0, 128);
-				draw_segment(x, y - radius - off_y, size, 255, 255, 0);
-			} else {
-				/* Going down */
-				draw_segment(x, y - radius - off_y, size, 64, 0, 128);
-				draw_segment(x, y + radius + off_y, size, 255, 255, 0);
-			}
-		}
+		draw_point_damage(size, x, y, x, y + step, 255, 255, 0, 64, 0, 128);
 
 		y += step;
 		usleep_range(8000, 8000);
