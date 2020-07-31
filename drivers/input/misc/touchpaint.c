@@ -27,8 +27,8 @@ static int fb_height = 2340;
 /* true = fill screen, false = paint */
 static bool fill_on_touch = false;
 module_param(fill_on_touch, bool, 0644);
-static int paint_radius = 3; /* pixels, must be odd for centering to work correctly */
-module_param(paint_radius, int, 0644);
+static int brush_size = 3; /* pixels, must be odd for centering to work correctly */
+module_param(brush_size, int, 0644);
 
 /* State */
 static u32 __iomem *fb_mem;
@@ -129,8 +129,8 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 
 static void draw_segment(int x, int y)
 {
-	int base_x = clamp(x - max(1, (paint_radius - 1) / 2), 0, fb_width);
-	int target_x = min(base_x + paint_radius, fb_width);
+	int base_x = clamp(x - max(1, (brush_size - 1) / 2), 0, fb_width);
+	int target_x = min(base_x + brush_size, fb_width);
 	int cur_x = base_x;
 
 	pr_debug("draw segment: x=%d y=%d\n", x, y);
@@ -142,13 +142,13 @@ static void draw_segment(int x, int y)
 
 static void draw_point(int x, int y)
 {
-	int base_y = clamp(y - max(1, (paint_radius - 1) / 2), 0, fb_height);
+	int base_y = clamp(y - max(1, (brush_size - 1) / 2), 0, fb_height);
 	int off_y;
 	u64 before;
 
 	pr_debug("draw point: x=%d y=%d\n", x, y);
 	before = ktime_get_ns();
-	for (off_y = 0; off_y < paint_radius; off_y++) {
+	for (off_y = 0; off_y < brush_size; off_y++) {
 		draw_segment(x, base_y + off_y);
 	}
 
