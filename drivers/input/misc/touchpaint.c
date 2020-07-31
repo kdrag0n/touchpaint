@@ -238,18 +238,17 @@ void touchpaint_finger_point(int slot, int x, int y)
 
 static int __init touchpaint_init(void)
 {
-	pr_info("initializing...\n");
-
 	fb_mem = ioremap_wc(fb_phys_addr, fb_max_size);
 	if (!fb_mem) {
-		pr_err("ioremap failed!\n");
+		pr_err("failed to map %zu-byte framebuffer at %pa!\n", fb_max_size,
+		       &fb_phys_addr);
 		return -ENOMEM;
 	}
 
 	fb_size = min((size_t)(fb_width * fb_height * 4), fb_max_size);
 
-	pr_info("%dx%d framebuffer spanning %zu bytes at 0x%llx (mapped to 0x%llx)\n",
-		fb_width, fb_height, fb_size, fb_phys_addr, fb_mem);
+	pr_info("using %dx%d framebuffer spanning %zu bytes at %pa (mapped to %px)\n",
+		fb_width, fb_height, fb_size, &fb_phys_addr, fb_mem);
 	blank_screen();
 
 	init_done = 1;
