@@ -89,11 +89,15 @@ static void draw_point(int x, int y)
 {
 	int base_y = clamp(y - max(1, (paint_radius - 1) / 2), 0, fb_height);
 	int off_y;
+	u64 before;
 
 	pr_debug("draw point: x=%d y=%d\n", x, y);
+	before = ktime_get_ns();
 	for (off_y = 0; off_y < paint_radius; off_y++) {
 		draw_segment(x, base_y + off_y);
 	}
+
+	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
 }
 
 void touchpaint_finger_down(int slot)
