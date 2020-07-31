@@ -74,18 +74,25 @@ static void set_pixel(int x, int y, u8 r, u8 g, u8 b)
 	*(volatile u32 *)(fb_mem + offset_px) = pixel;
 }
 
+static void draw_segment(int x, int y)
+{
+	int base_x = clamp(x - max(1, (paint_radius - 1) / 2), 0, fb_width);
+	int off_x;
+
+	pr_debug("draw segment: x=%d y=%d\n", x, y);
+	for (off_x = 0; off_x < paint_radius; off_x++) {
+		set_pixel(base_x + off_x, y, 255, 255, 255);
+	}
+}
+
 static void draw_point(int x, int y)
 {
 	int base_y = clamp(y - max(1, (paint_radius - 1) / 2), 0, fb_height);
-	int base_x = clamp(x - max(1, (paint_radius - 1) / 2), 0, fb_width);
-	int off_x;
 	int off_y;
 
 	pr_debug("draw point: x=%d y=%d\n", x, y);
-	for (off_x = 0; off_x < paint_radius; off_x++) {
-		for (off_y = 0; off_y < paint_radius; off_y++) {
-			set_pixel(base_x + off_x, base_y + off_y, 255, 255, 255);
-		}
+	for (off_y = 0; off_y < paint_radius; off_y++) {
+		draw_segment(x, base_y + off_y);
 	}
 }
 
