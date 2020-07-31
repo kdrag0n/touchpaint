@@ -134,7 +134,8 @@ static void draw_segment(int x, int y, int size, u8 r, u8 g, u8 b)
 	int target_x = min(base_x + size, fb_width);
 	int cur_x = base_x;
 
-	pr_debug("draw segment: x=%d y=%d\n", x, y);
+	pr_debug("draw segment: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size,
+		 r, g, b);
 	while (cur_x < target_x) {
 		int remaining_px = target_x - cur_x;
 		cur_x += draw_pixels(cur_x, y, remaining_px, r, g, b);
@@ -147,7 +148,7 @@ static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 	int off_y;
 	u64 before;
 
-	pr_debug("draw point: x=%d y=%d\n", x, y);
+	pr_debug("draw point: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size, r, g, b);
 	before = ktime_get_ns();
 	for (off_y = 0; off_y < size; off_y++) {
 		draw_segment(x, base_y + off_y, size, r, g, b);
