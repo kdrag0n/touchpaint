@@ -128,7 +128,7 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 	return 0;
 }
 
-static void draw_segment(int x, int y, int size)
+static void draw_segment(int x, int y, int size, u8 r, u8 g, u8 b)
 {
 	int base_x = clamp(x - max(1, (size - 1) / 2), 0, fb_width);
 	int target_x = min(base_x + size, fb_width);
@@ -137,11 +137,11 @@ static void draw_segment(int x, int y, int size)
 	pr_debug("draw segment: x=%d y=%d\n", x, y);
 	while (cur_x < target_x) {
 		int remaining_px = target_x - cur_x;
-		cur_x += draw_pixels(cur_x, y, remaining_px, 255, 255, 255);
+		cur_x += draw_pixels(cur_x, y, remaining_px, r, g, b);
 	}
 }
 
-static void draw_point(int x, int y, int size)
+static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 {
 	int base_y = clamp(y - max(1, (size - 1) / 2), 0, fb_height);
 	int off_y;
@@ -150,7 +150,7 @@ static void draw_point(int x, int y, int size)
 	pr_debug("draw point: x=%d y=%d\n", x, y);
 	before = ktime_get_ns();
 	for (off_y = 0; off_y < size; off_y++) {
-		draw_segment(x, base_y + off_y, size);
+		draw_segment(x, base_y + off_y, size, r, g, b);
 	}
 
 	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
@@ -194,7 +194,7 @@ void touchpaint_finger_up(int slot)
  * Bresenham's line drawing algorithm
  * Source: https://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C
  */
-static void draw_line(int x1, int y1, int x2, int y2)
+static void draw_line(int x1, int y1, int x2, int y2, u8 r, u8 g, u8 b)
 {
 	int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
 	int dy = abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
@@ -203,7 +203,7 @@ static void draw_line(int x1, int y1, int x2, int y2)
 	int x = x1, y = y1;
 
 	while (true) {
-		draw_point(x, y, brush_size);
+		draw_point(x, y, brush_size, r, g, b);
 
 		if (x == x2 && y == y2)
 			break;
@@ -226,10 +226,10 @@ void touchpaint_finger_point(int slot, int x, int y)
 	if (!init_done || !finger_down[slot] || fill_on_touch)
 		return;
 
-	draw_point(x, y, brush_size);
+	draw_point(x, y, brush_size, 255, 255, 255);
 
 	if (last_point[slot].x && last_point[slot].y)
-		draw_line(last_point[slot].x, last_point[slot].y, x, y);
+		draw_line(last_point[slot].x, last_point[slot].y, x, y, 255, 255, 255);
 
 	last_point[slot].x = x;
 	last_point[slot].y = y;
