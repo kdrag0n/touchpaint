@@ -128,10 +128,10 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 	return 0;
 }
 
-static void draw_segment(int x, int y)
+static void draw_segment(int x, int y, int size)
 {
-	int base_x = clamp(x - max(1, (brush_size - 1) / 2), 0, fb_width);
-	int target_x = min(base_x + brush_size, fb_width);
+	int base_x = clamp(x - max(1, (size - 1) / 2), 0, fb_width);
+	int target_x = min(base_x + size, fb_width);
 	int cur_x = base_x;
 
 	pr_debug("draw segment: x=%d y=%d\n", x, y);
@@ -141,16 +141,16 @@ static void draw_segment(int x, int y)
 	}
 }
 
-static void draw_point(int x, int y)
+static void draw_point(int x, int y, int size)
 {
-	int base_y = clamp(y - max(1, (brush_size - 1) / 2), 0, fb_height);
+	int base_y = clamp(y - max(1, (size - 1) / 2), 0, fb_height);
 	int off_y;
 	u64 before;
 
 	pr_debug("draw point: x=%d y=%d\n", x, y);
 	before = ktime_get_ns();
-	for (off_y = 0; off_y < brush_size; off_y++) {
-		draw_segment(x, base_y + off_y);
+	for (off_y = 0; off_y < size; off_y++) {
+		draw_segment(x, base_y + off_y, size);
 	}
 
 	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
@@ -203,7 +203,7 @@ static void draw_line(int x1, int y1, int x2, int y2)
 	int x = x1, y = y1;
 
 	while (true) {
-		draw_point(x, y);
+		draw_point(x, y, brush_size);
 
 		if (x == x2 && y == y2)
 			break;
@@ -226,7 +226,7 @@ void touchpaint_finger_point(int slot, int x, int y)
 	if (!init_done || !finger_down[slot] || fill_on_touch)
 		return;
 
-	draw_point(x, y);
+	draw_point(x, y, brush_size);
 
 	if (last_point[slot].x && last_point[slot].y)
 		draw_line(last_point[slot].x, last_point[slot].y, x, y);
