@@ -87,6 +87,17 @@ static void set_2pixels(size_t offset_px, u32 pixel)
 	*(volatile u64 *)(fb_mem + offset_px) = pixels;
 }
 
+#if defined(CONFIG_ARCH_SUPPORTS_INT128) && defined(__SIZEOF_INT128__)
+static void set_4pixels(size_t offset_px, u32 pixel32)
+{
+	unsigned __int128 pixel128 = (unsigned __int128)pixel32;
+	unsigned __int128 pixels = (pixel128 << 96) | (pixel128 << 64) |
+		(pixel128 << 32) | pixel128;
+
+	*(volatile unsigned __int128 *)(fb_mem + offset_px) = pixels;
+}
+#endif
+
 static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 {
 	size_t offset_px = point_to_offset(x, y);
@@ -94,6 +105,13 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 
 	pr_debug("set pixel: x=%d y=%d offset=%zupx count=%d color=(%d, %d, %d)\n",
 		 x, y, offset_px, count, r, g, b);
+
+#if defined(CONFIG_ARCH_SUPPORTS_INT128) && defined(__SIZEOF_INT128__)
+	if (count >= 4) {
+		set_4pixels(offset_px, pixel);
+		return 4;
+	}
+#endif
 
 	if (count >= 2) {
 		set_2pixels(offset_px, pixel);
