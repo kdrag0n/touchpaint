@@ -446,10 +446,10 @@ static void touchpaint_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id touchpaint_ids[] = {
-	/* Keys */
 	{
-		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
-		.evbit = { BIT_MASK(EV_KEY) }
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT | INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+		.keybit = { [BIT_WORD(KEY_VOLUMEUP)] = BIT_MASK(KEY_VOLUMEUP) },
 	},
 	{ }
 };
