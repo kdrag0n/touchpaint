@@ -180,8 +180,8 @@ static void fill_screen(u8 r, u8 g, u8 b)
 }
 
 static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
-			      u8 fg_r, u8 fg_g, u8 fg_b,
-			      u8 bg_r, u8 bg_g, u8 bg_b)
+				   u8 fg_r, u8 fg_g, u8 fg_b,
+				   u8 bg_r, u8 bg_g, u8 bg_b)
 {
 	int radius = max(1, (size - 1) / 2);
 	int base_x = clamp(x1 - radius, 0, fb_width);
@@ -391,7 +391,7 @@ static void touchpaint_finger_point(int slot, int x, int y)
 }
 
 static void touchpaint_input_event(struct input_handle *handle,
-		unsigned int type, unsigned int code, int value)
+				   unsigned int type, unsigned int code, int value)
 {
 	static int slot = 0;
 
