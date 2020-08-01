@@ -360,7 +360,7 @@ static void touchpaint_finger_point(int slot, int x, int y)
 		draw_point(x, y, brush_size, 255, 255, 255);
 
 		if (last_point[slot].x && last_point[slot].y)
-			draw_line(last_point[slot].x, last_point[slot].y, x, y,
+			draw_line(x, y, last_point[slot].x, last_point[slot].y,
 				  255, 255, 255);
 
 		break;
