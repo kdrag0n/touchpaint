@@ -115,7 +115,7 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 	size_t offset_px = point_to_offset(x, y);
 	u32 pixel = rgb_to_pixel(r, g, b);
 
-	pr_debug("set pixel: x=%d y=%d offset=%zupx count=%d color=(%d, %d, %d)\n",
+	pr_debug("draw pixels: x=%d y=%d offset=%zupx count=%d color=(%d, %d, %d)\n",
 		 x, y, offset_px, count, r, g, b);
 
 #if defined(CONFIG_ARCH_SUPPORTS_INT128) && defined(__SIZEOF_INT128__)
