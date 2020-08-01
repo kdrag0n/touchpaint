@@ -28,7 +28,8 @@ struct point {
 enum tp_mode {
 	MODE_PAINT,
 	MODE_FILL,
-	MODE_BOX
+	MODE_BOX,
+	MODE_FOLLOW
 };
 
 /* Config */
@@ -42,6 +43,8 @@ module_param(mode, int, 0644);
 /* Brush size in pixels - odd = slower but centered, even = faster but not centered */
 static int brush_size = 2;
 module_param(brush_size, int, 0644);
+static int follow_box_size = 301;
+module_param(follow_box_size, int, 0644);
 
 /* State */
 static u32 __iomem *fb_mem;
@@ -291,6 +294,8 @@ void touchpaint_finger_down(int slot)
 			}
 
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -302,13 +307,17 @@ void touchpaint_finger_up(int slot)
 		return;
 
 	pr_debug("finger %d up\n", slot);
-	finger_down[slot] = false;
-	last_point[slot].x = 0;
-	last_point[slot].y = 0;
 
 	if (--fingers == 0 && mode == MODE_FILL) {
 		mod_timer(&blank_timer, jiffies + msecs_to_jiffies(250));
+	} else if (mode == MODE_FOLLOW) {
+		draw_point(last_point[slot].x, last_point[slot].y, follow_box_size,
+			   0, 0, 0);
 	}
+
+	finger_down[slot] = false;
+	last_point[slot].x = 0;
+	last_point[slot].y = 0;
 }
 
 /*
@@ -344,13 +353,33 @@ static void draw_line(int x1, int y1, int x2, int y2, u8 r, u8 g, u8 b)
 
 void touchpaint_finger_point(int slot, int x, int y)
 {
-	if (mode != MODE_PAINT || !init_done || !finger_down[slot])
+	if (!init_done || !finger_down[slot])
 		return;
 
-	draw_point(x, y, brush_size, 255, 255, 255);
+	switch (mode) {
+	case MODE_PAINT:
+		draw_point(x, y, brush_size, 255, 255, 255);
 
-	if (last_point[slot].x && last_point[slot].y)
-		draw_line(last_point[slot].x, last_point[slot].y, x, y, 255, 255, 255);
+		if (last_point[slot].x && last_point[slot].y)
+			draw_line(last_point[slot].x, last_point[slot].y, x, y,
+				  255, 255, 255);
+
+		break;
+	case MODE_FOLLOW:
+		/* Just draw a box for the first point */
+		if (!last_point[slot].x && !last_point[slot].y) {
+			draw_point(x, y, follow_box_size, 255, 255, 255);
+			break;
+		}
+
+		/* Clear old point and draw new point */
+		draw_point(last_point[slot].x, last_point[slot].y, follow_box_size,
+			   0, 0, 0);
+		draw_point(x, y, follow_box_size, 255, 255, 255);
+		break;
+	default:
+		break;
+	}
 
 	last_point[slot].x = x;
 	last_point[slot].y = y;
