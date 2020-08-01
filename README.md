@@ -46,6 +46,13 @@ The touchscreen IRQ should be pinned to the fastest CPU available in the system,
 
 [Overclocking the touchscreen's I2C bus](https://github.com/kdrag0n/touchpaint/commit/e016b1e03bd1) can help reduce latency slightly. On the Asus ZenFone 6, the time taken to read events from the touchscreen dropped from 3-4 ms to 1-2 ms after overclocking its I2C bus from 400 KHz to 1 MHz, which is quite significant at this scale.
 
+### 128-bit integers
+
+Kernel support for 128-bit integers (which are supported by all ARMv8 CPUs) will improve rendering performance significantly, especially for larger blocks, as it allows up to 4 pixels to be drawn with a single instruction. The following commits will need to backported from mainline in older downstream kernels:
+
+- [arm64: support __int128 on gcc 5+](https://github.com/torvalds/linux/commit/fb8722735f50)
+- [arm64: support __int128 with clang](https://github.com/torvalds/linux/commit/ad40bdafb495)
+
 ## Modes
 
 This module has several different modes:
