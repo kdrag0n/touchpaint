@@ -143,9 +143,8 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 
 static void draw_segment(int x, int y, int length, u8 r, u8 g, u8 b)
 {
-	int base_x = clamp(x - max(1, (length - 1) / 2), 0, fb_width);
-	int target_x = min(base_x + length, fb_width);
-	int cur_x = base_x;
+	int target_x = min(x + length, fb_width);
+	int cur_x = x;
 
 	pr_debug("draw segment: x=%d y=%d length=%d r=%d g=%d b=%d\n", x, y, length,
 		 r, g, b);
@@ -157,14 +156,16 @@ static void draw_segment(int x, int y, int length, u8 r, u8 g, u8 b)
 
 static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 {
-	int base_y = clamp(y - max(1, (size - 1) / 2), 0, fb_height);
+	int radius = max(1, (size - 1) / 2);
+	int base_x = clamp(x - radius, 0, fb_width);
+	int base_y = clamp(y - radius, 0, fb_height);
 	int off_y;
 	u64 before;
 
 	pr_debug("draw point: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size, r, g, b);
 	before = ktime_get_ns();
 	for (off_y = 0; off_y < size; off_y++) {
-		draw_segment(x, base_y + off_y, size, r, g, b);
+		draw_segment(base_x, base_y + off_y, size, r, g, b);
 	}
 
 	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
