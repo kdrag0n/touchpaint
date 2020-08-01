@@ -12,6 +12,7 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/slab.h>
 #include <linux/touchpaint.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -29,7 +30,8 @@ enum tp_mode {
 	MODE_PAINT,
 	MODE_FILL,
 	MODE_BOX,
-	MODE_FOLLOW
+	MODE_FOLLOW,
+	MODE_MAX
 };
 
 /* Config */
@@ -385,8 +387,82 @@ void touchpaint_finger_point(int slot, int x, int y)
 	last_point[slot].y = y;
 }
 
+static void touchpaint_input_event(struct input_handle *handle,
+		unsigned int type, unsigned int code, int value)
+{
+	pr_debug("input event: type=%u code=%u val=%d\n", type, code, value);
+
+	if (type == EV_KEY && code == KEY_VOLUMEUP && value == 1) {
+		/* Box needs to be stopped before cycling to prevent artifacts */
+		if (mode == MODE_BOX)
+			stop_box_thread();
+
+		/* Cycle mode */
+		if (++mode == MODE_MAX)
+			mode = 0;
+
+		blank_screen();
+	}
+}
+
+static int touchpaint_input_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
+{
+	struct input_handle *handle;
+	int ret;
+
+	handle = kzalloc(sizeof(*handle), GFP_KERNEL);
+	if (!handle)
+		return -ENOMEM;
+
+	handle->dev = dev;
+	handle->handler = handler;
+	handle->name = KBUILD_MODNAME;
+
+	ret = input_register_handle(handle);
+	if (ret)
+		goto err2;
+
+	ret = input_open_device(handle);
+	if (ret)
+		goto err1;
+
+	return 0;
+err1:
+	input_unregister_handle(handle);
+err2:
+	kfree(handle);
+	return ret;
+}
+
+static void touchpaint_input_disconnect(struct input_handle *handle)
+{
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
+}
+
+static const struct input_device_id touchpaint_ids[] = {
+	/* Keys */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
+		.evbit = { BIT_MASK(EV_KEY) }
+	},
+	{ }
+};
+
+static struct input_handler touchpaint_input_handler = {
+	.event          = touchpaint_input_event,
+	.connect        = touchpaint_input_connect,
+	.disconnect     = touchpaint_input_disconnect,
+	.name           = KBUILD_MODNAME,
+	.id_table       = touchpaint_ids,
+};
+
 static int __init touchpaint_init(void)
 {
+	int ret;
+
 	fb_mem = ioremap_wc(fb_phys_addr, fb_max_size);
 	if (!fb_mem) {
 		pr_err("failed to map %zu-byte framebuffer at %pa!\n", fb_max_size,
@@ -399,6 +475,10 @@ static int __init touchpaint_init(void)
 	pr_info("using %dx%d framebuffer spanning %zu bytes at %pa (mapped to %px)\n",
 		fb_width, fb_height, fb_size, &fb_phys_addr, fb_mem);
 	blank_screen();
+
+	ret = input_register_handler(&touchpaint_input_handler);
+	if (ret)
+		pr_err("failed to register input handler! err=%d\n", ret);
 
 	init_done = 1;
 	return 0;
