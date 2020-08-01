@@ -28,7 +28,7 @@ struct point {
 enum tp_mode {
 	MODE_PAINT,
 	MODE_FILL,
-	MODE_BOX,
+	MODE_BOUNCE,
 	MODE_FOLLOW,
 	MODE_MAX
 };
@@ -285,7 +285,7 @@ static void touchpaint_finger_down(int slot)
 			del_timer(&blank_timer);
 			fill_screen_white();
 			break;
-		case MODE_BOX:
+		case MODE_BOUNCE:
 			if (box_thread) {
 				stop_box_thread();
 				blank_screen();
@@ -399,7 +399,7 @@ static void touchpaint_input_event(struct input_handle *handle,
 
 	if (type == EV_KEY && code == KEY_VOLUMEUP && value == 1) {
 		/* Box needs to be stopped before cycling to prevent artifacts */
-		if (mode == MODE_BOX)
+		if (mode == MODE_BOUNCE)
 			stop_box_thread();
 
 		/* Cycle mode */
