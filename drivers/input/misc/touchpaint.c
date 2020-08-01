@@ -179,36 +179,30 @@ static void fill_screen(u8 r, u8 g, u8 b)
 	}
 }
 
-static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
+static void draw_vert_point_damage(int size, int x1, int y1, int y2,
 				   u8 fg_r, u8 fg_g, u8 fg_b,
 				   u8 bg_r, u8 bg_g, u8 bg_b)
 {
 	int radius = max(1, (size - 1) / 2);
 	int base_x = clamp(x1 - radius, 0, fb_width);
-	int dx = x2 - x1;
 	int dy = y2 - y1;
-	int off_x = 0;
 	int off_y;
 
-	do {
-		for (off_y = 0; off_y < abs(dy); off_y++) {
-			if (dy < 0) {
-				/* Going up */
-				draw_h_line(base_x + off_x, y1 + radius + off_y, size,
-					    bg_r, bg_g, bg_b);
-				draw_h_line(base_x + off_x, y1 - radius - off_y, size,
-					    fg_r, fg_g, fg_b);
-			} else {
-				/* Going down */
-				draw_h_line(base_x + off_x, y1 - radius - off_y, size,
-					    bg_r, bg_g, bg_b);
-				draw_h_line(base_x + off_x, y1 + radius + off_y, size,
-					    fg_r, fg_g, fg_b);
-			}
+	for (off_y = 0; off_y < abs(dy); off_y++) {
+		if (dy < 0) {
+			/* Going up */
+			draw_h_line(base_x, y1 + radius + off_y, size,
+					bg_r, bg_g, bg_b);
+			draw_h_line(base_x, y1 - radius - off_y, size,
+					fg_r, fg_g, fg_b);
+		} else {
+			/* Going down */
+			draw_h_line(base_x, y1 - radius - off_y, size,
+					bg_r, bg_g, bg_b);
+			draw_h_line(base_x, y1 + radius + off_y, size,
+					fg_r, fg_g, fg_b);
 		}
-
-		off_x++;
-	} while (off_x < abs(dx));
+	}
 }
 
 static int box_thread_func(void *data)
@@ -229,7 +223,7 @@ static int box_thread_func(void *data)
 			step *= -1;
 
 		/* Draw damage rather than redrawing the entire box */
-		draw_vert_point_damage(size, x, y, x, y + step, 255, 255, 0, 64, 0, 128);
+		draw_vert_point_damage(size, x, y, y + step, 255, 255, 0, 64, 0, 128);
 
 		y += step;
 		usleep_range(8000, 8000);
