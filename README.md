@@ -21,7 +21,7 @@ The only changes that are strictly necessary are the core Touchpaint module comm
 
 Touchpaint will need to be configured for every new device. All configuration variables are located at the top of the file. The framebuffer address, size, width, and height will need to be updated for the module to work properly.
 
-The default config's framebuffer address and size should work for almost all Snapdragon 855 devices, but they will need to be updated on other platforms. The correaponsing device tree node is usually named `cont_splash_region` on Snapdragon SoCs.
+The default config's framebuffer address and size should work for almost all Snapdragon 855 devices, but they will need to be changed on other platforms. The corresponding device tree node is usually named `cont_splash_region` on Snapdragon SoCs.
 
 ## Userspace
 
