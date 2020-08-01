@@ -144,13 +144,13 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 	return 0;
 }
 
-static void draw_segment(int x, int y, int length, u8 r, u8 g, u8 b)
+static void draw_h_line(int x, int y, int length, u8 r, u8 g, u8 b)
 {
 	int target_x = min(x + length, fb_width);
 	int cur_x = x;
 
-	pr_debug("draw segment: x=%d y=%d length=%d r=%d g=%d b=%d\n", x, y, length,
-		 r, g, b);
+	pr_debug("draw horizontal line: x=%d y=%d length=%d r=%d g=%d b=%d\n",
+		 x, y, length, r, g, b);
 	while (cur_x < target_x) {
 		int remaining_px = target_x - cur_x;
 		cur_x += draw_pixels(cur_x, y, remaining_px, r, g, b);
@@ -168,7 +168,7 @@ static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 	pr_debug("draw point: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size, r, g, b);
 	before = ktime_get_ns();
 	for (off_y = 0; off_y < size; off_y++) {
-		draw_segment(base_x, base_y + off_y, size, r, g, b);
+		draw_h_line(base_x, base_y + off_y, size, r, g, b);
 	}
 
 	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
@@ -201,15 +201,15 @@ static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
 		for (off_y = 0; off_y < abs(dy); off_y++) {
 			if (dy < 0) {
 				/* Going up */
-				draw_segment(x1 + off_x, y1 + radius + off_y, size,
+				draw_h_line(x1 + off_x, y1 + radius + off_y, size,
 					     bg_r, bg_g, bg_b);
-				draw_segment(x1 + off_x, y1 - radius - off_y, size,
+				draw_h_line(x1 + off_x, y1 - radius - off_y, size,
 					     fg_r, fg_g, fg_b);
 			} else {
 				/* Going down */
-				draw_segment(x1 + off_x, y1 - radius - off_y, size,
+				draw_h_line(x1 + off_x, y1 - radius - off_y, size,
 					     bg_r, bg_g, bg_b);
-				draw_segment(x1 + off_x, y1 + radius + off_y, size,
+				draw_h_line(x1 + off_x, y1 + radius + off_y, size,
 					     fg_r, fg_g, fg_b);
 			}
 		}
