@@ -59,11 +59,7 @@ static struct task_struct *box_thread;
 
 static void blank_screen(void)
 {
-	u64 before = ktime_get_ns();
-	u64 delta;
 	memset(fb_mem, 0, fb_size);
-	delta = ktime_get_ns() - before;
-	pr_info("TPM: [blank] %llu ns to fill %zu bytes on cpu%d\n", delta, fb_size, smp_processor_id());
 }
 
 static void blank_callback(unsigned long data)
@@ -74,11 +70,7 @@ static DEFINE_TIMER(blank_timer, blank_callback, 0, 0);
 
 static void fill_screen_white(void)
 {
-	u64 before = ktime_get_ns();
-	u64 delta;
 	memset(fb_mem, 0xffffffff, fb_size);
-	delta = ktime_get_ns() - before;
-	pr_info("TPM: [fill] %llu ns to fill %zu bytes on cpu%d\n", delta, fb_size, smp_processor_id());
 }
 
 static size_t point_to_offset(int x, int y)
@@ -165,15 +157,11 @@ static void draw_point(int x, int y, int size, u8 r, u8 g, u8 b)
 	int base_x = clamp(x - radius, 0, fb_width);
 	int base_y = clamp(y - radius, 0, fb_height);
 	int off_y;
-	u64 before;
 
 	pr_debug("draw point: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size, r, g, b);
-	before = ktime_get_ns();
 	for (off_y = 0; off_y < size; off_y++) {
 		draw_h_line(base_x, base_y + off_y, size, r, g, b);
 	}
-
-	pr_debug("draw point took %llu ns\n", ktime_get_ns() - before);
 }
 
 static void fill_screen(u8 r, u8 g, u8 b)
@@ -273,12 +261,12 @@ static void stop_box_thread(void)
 
 void touchpaint_finger_down(int slot)
 {
-	pr_debug("finger %d down event from driver\n", slot);
 	if (!init_done || finger_down[slot])
 		return;
 
 	pr_debug("finger %d down\n", slot);
 	finger_down[slot] = true;
+
 	if (++fingers == 1) {
 		switch (mode) {
 		case MODE_PAINT:
@@ -309,7 +297,6 @@ void touchpaint_finger_down(int slot)
 
 void touchpaint_finger_up(int slot)
 {
-	pr_debug("finger %d up event from driver\n", slot);
 	if (!init_done || !finger_down[slot])
 		return;
 
