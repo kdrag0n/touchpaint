@@ -45,6 +45,8 @@ static int brush_size = 2;
 module_param(brush_size, int, 0644);
 static int follow_box_size = 301;
 module_param(follow_box_size, int, 0644);
+/* Paint clear delay in ms, 0 = on next touch */
+static int paint_clear_delay = 0;
 
 /* State */
 static u32 __iomem *fb_mem;
@@ -279,7 +281,11 @@ void touchpaint_finger_down(int slot)
 	if (++fingers == 1) {
 		switch (mode) {
 		case MODE_PAINT:
-			blank_screen();
+			if (paint_clear_delay)
+				del_timer(&blank_timer);
+			else
+				blank_screen();
+
 			break;
 		case MODE_FILL:
 			del_timer(&blank_timer);
@@ -308,8 +314,12 @@ void touchpaint_finger_up(int slot)
 
 	pr_debug("finger %d up\n", slot);
 
-	if (--fingers == 0 && mode == MODE_FILL) {
-		mod_timer(&blank_timer, jiffies + msecs_to_jiffies(250));
+	if (--fingers == 0) {
+		if (mode == MODE_FILL)
+			mod_timer(&blank_timer, jiffies + msecs_to_jiffies(250));
+		else if (mode == MODE_PAINT && paint_clear_delay)
+			mod_timer(&blank_timer,
+				  jiffies + msecs_to_jiffies(paint_clear_delay));
 	} else if (mode == MODE_FOLLOW) {
 		draw_point(last_point[slot].x, last_point[slot].y, follow_box_size,
 			   0, 0, 0);
