@@ -350,7 +350,7 @@ static void draw_line(int x1, int y1, int x2, int y2, u8 r, u8 g, u8 b)
 
 		if (x == x2 && y == y2)
 			break;
-		
+
 		err2 = err;
 		if (err2 > -dx) {
 			err -= dy;
