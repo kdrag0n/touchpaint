@@ -141,13 +141,13 @@ static int draw_pixels(int x, int y, int count, u8 r, u8 g, u8 b)
 	return 0;
 }
 
-static void draw_segment(int x, int y, int size, u8 r, u8 g, u8 b)
+static void draw_segment(int x, int y, int length, u8 r, u8 g, u8 b)
 {
-	int base_x = clamp(x - max(1, (size - 1) / 2), 0, fb_width);
-	int target_x = min(base_x + size, fb_width);
+	int base_x = clamp(x - max(1, (length - 1) / 2), 0, fb_width);
+	int target_x = min(base_x + length, fb_width);
 	int cur_x = base_x;
 
-	pr_debug("draw segment: x=%d y=%d size=%d r=%d g=%d b=%d\n", x, y, size,
+	pr_debug("draw segment: x=%d y=%d length=%d r=%d g=%d b=%d\n", x, y, length,
 		 r, g, b);
 	while (cur_x < target_x) {
 		int remaining_px = target_x - cur_x;
