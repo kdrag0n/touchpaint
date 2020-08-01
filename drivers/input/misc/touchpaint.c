@@ -194,6 +194,7 @@ static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
 			      u8 bg_r, u8 bg_g, u8 bg_b)
 {
 	int radius = max(1, (size - 1) / 2);
+	int base_x = clamp(x1 - radius, 0, fb_width);
 	int dx = x2 - x1;
 	int dy = y2 - y1;
 	int off_x = 0;
@@ -203,15 +204,15 @@ static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
 		for (off_y = 0; off_y < abs(dy); off_y++) {
 			if (dy < 0) {
 				/* Going up */
-				draw_h_line(x1 + off_x, y1 + radius + off_y, size,
+				draw_h_line(base_x + off_x, y1 + radius + off_y, size,
 					     bg_r, bg_g, bg_b);
-				draw_h_line(x1 + off_x, y1 - radius - off_y, size,
+				draw_h_line(base_x + off_x, y1 - radius - off_y, size,
 					     fg_r, fg_g, fg_b);
 			} else {
 				/* Going down */
-				draw_h_line(x1 + off_x, y1 - radius - off_y, size,
+				draw_h_line(base_x + off_x, y1 - radius - off_y, size,
 					     bg_r, bg_g, bg_b);
-				draw_h_line(x1 + off_x, y1 + radius + off_y, size,
+				draw_h_line(base_x + off_x, y1 + radius + off_y, size,
 					     fg_r, fg_g, fg_b);
 			}
 		}
