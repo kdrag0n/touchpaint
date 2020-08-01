@@ -187,7 +187,7 @@ static void fill_screen(u8 r, u8 g, u8 b)
 	}
 }
 
-static void draw_point_damage(int size, int x1, int y1, int x2, int y2,
+static void draw_vert_point_damage(int size, int x1, int y1, int x2, int y2,
 			      u8 fg_r, u8 fg_g, u8 fg_b,
 			      u8 bg_r, u8 bg_g, u8 bg_b)
 {
@@ -236,7 +236,7 @@ static int box_thread_func(void *data)
 			step *= -1;
 
 		/* Draw damage rather than redrawing the entire box */
-		draw_point_damage(size, x, y, x, y + step, 255, 255, 0, 64, 0, 128);
+		draw_vert_point_damage(size, x, y, x, y + step, 255, 255, 0, 64, 0, 128);
 
 		y += step;
 		usleep_range(8000, 8000);
