@@ -321,7 +321,9 @@ void touchpaint_finger_up(int slot)
 		else if (mode == MODE_PAINT && paint_clear_delay)
 			mod_timer(&blank_timer,
 				  jiffies + msecs_to_jiffies(paint_clear_delay));
-	} else if (mode == MODE_FOLLOW) {
+	}
+
+	if (mode == MODE_FOLLOW) {
 		draw_point(last_point[slot].x, last_point[slot].y, follow_box_size,
 			   0, 0, 0);
 	}
