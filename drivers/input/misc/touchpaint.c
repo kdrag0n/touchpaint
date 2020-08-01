@@ -55,6 +55,7 @@ static u32 __iomem *fb_mem;
 static size_t fb_size;
 static bool init_done;
 static unsigned int fingers;
+static struct point slots[MAX_FINGERS];
 static bool finger_down[MAX_FINGERS];
 static struct point last_point[MAX_FINGERS];
 static struct task_struct *box_thread;
@@ -393,6 +394,8 @@ void touchpaint_finger_point(int slot, int x, int y)
 static void touchpaint_input_event(struct input_handle *handle,
 		unsigned int type, unsigned int code, int value)
 {
+	static int slot = 0;
+
 	pr_debug("input event: type=%u code=%u val=%d\n", type, code, value);
 
 	if (type == EV_KEY && code == KEY_VOLUMEUP && value == 1) {
@@ -405,6 +408,36 @@ static void touchpaint_input_event(struct input_handle *handle,
 			mode = 0;
 
 		blank_screen();
+	} else if (type == EV_ABS) {
+		switch (code) {
+		case ABS_MT_SLOT:
+			slot = value;
+			break;
+		case ABS_MT_POSITION_X:
+			slots[slot].x = value;
+			break;
+		case ABS_MT_POSITION_Y:
+			slots[slot].y = value;
+			break;
+		case ABS_MT_TRACKING_ID:
+			if (value == -1) {
+				touchpaint_finger_up(slot);
+				slots[slot].x = -1;
+				slots[slot].y = -1;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+
+	if ((type == EV_ABS && code == ABS_MT_SLOT) ||
+	    (type == EV_SYN && code == SYN_REPORT)) {
+		if (slots[slot].x != -1 && slots[slot].y != -1) {
+			touchpaint_finger_down(slot);
+			touchpaint_finger_point(slot, slots[slot].x, slots[slot].y);
+		}
 	}
 }
 
@@ -446,10 +479,20 @@ static void touchpaint_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id touchpaint_ids[] = {
+	/* Volume-up key */
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT | INPUT_DEVICE_ID_MATCH_KEYBIT,
 		.evbit = { BIT_MASK(EV_KEY) },
 		.keybit = { [BIT_WORD(KEY_VOLUMEUP)] = BIT_MASK(KEY_VOLUMEUP) },
+	},
+	/* Touchscreen */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
+			BIT_MASK(ABS_MT_POSITION_X) |
+			BIT_MASK(ABS_MT_POSITION_Y) },
 	},
 	{ }
 };
@@ -465,6 +508,7 @@ static struct input_handler touchpaint_input_handler = {
 static int __init touchpaint_init(void)
 {
 	int ret;
+	int i;
 
 	fb_mem = ioremap_wc(fb_phys_addr, fb_max_size);
 	if (!fb_mem) {
@@ -478,6 +522,11 @@ static int __init touchpaint_init(void)
 	pr_info("using %dx%d framebuffer spanning %zu bytes at %pa (mapped to %px)\n",
 		fb_width, fb_height, fb_size, &fb_phys_addr, fb_mem);
 	blank_screen();
+
+	for (i = 0; i < MAX_FINGERS; i++) {
+		slots[i].x = -1;
+		slots[i].y = -1;
+	}
 
 	ret = input_register_handler(&touchpaint_input_handler);
 	if (ret)
