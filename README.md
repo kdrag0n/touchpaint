@@ -1,6 +1,6 @@
 # Touchpaint
 
-Touchpaint is a Linux kernel module designed to achieve the lowest possible end-to-end input latency on modern smartphones. It aims to reverse the trend of newer computers exhibiting [significantly worse latency than older ones](https://danluu.com/input-lag/) and demonstrate that modern hardware is *capable* of delivering low latency, though perhaps not in general-purpose operating systems or graphics rendering pipelines.
+Touchpaint is a Linux kernel module designed to achieve the lowest possible end-to-end input latency on modern smartphones. It aims to reverse the trend of newer computers exhibiting [significantly worse latency than older ones](https://danluu.com/input-lag/) and demonstrate that modern devices are *capable* of delivering low latency, though perhaps not in general-purpose operating systems or graphics rendering pipelines.
 
 Tap latency with Touchpaint has been measured to be as low as 10 ms — almost as low as possible on a 60 Hz display — on the Asus ROG Phone II (240 Hz touch scan rate) and 20 ms on the Asus ZenFone 6 (120 Hz touch scan rate). The display was refreshing at 60 Hz on both devices.
 
