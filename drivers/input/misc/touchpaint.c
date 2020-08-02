@@ -232,7 +232,7 @@ static int box_thread_func(void *data)
 	return 0;
 }
 
-static void start_box_thread(void)
+static void __start_box_thread(struct work_struct *work)
 {
 	if (box_thread)
 		return;
@@ -243,8 +243,9 @@ static void start_box_thread(void)
 		box_thread = NULL;
 	}
 }
+static DECLARE_WORK(start_box_work, __start_box_thread);
 
-static void stop_box_thread(void)
+static void __stop_box_thread(struct work_struct *work)
 {
 	int ret;
 
@@ -252,10 +253,24 @@ static void stop_box_thread(void)
 		return;
 
 	ret = kthread_stop(box_thread);
-	if (ret)
+	if (ret) {
 		pr_err("failed to stop box thread! err=%d\n", ret);
+		return;
+	}
 
 	box_thread = NULL;
+	blank_screen();
+}
+static DECLARE_WORK(stop_box_work, __stop_box_thread);
+
+static void start_box_thread(void)
+{
+	schedule_work(&start_box_work);
+}
+
+static void stop_box_thread(void)
+{
+	schedule_work(&stop_box_work);
 }
 
 static void touchpaint_finger_down(int slot)
@@ -280,12 +295,10 @@ static void touchpaint_finger_down(int slot)
 			fill_screen_white();
 			break;
 		case MODE_BOUNCE:
-			if (box_thread) {
+			if (box_thread)
 				stop_box_thread();
-				blank_screen();
-			} else {
+			else
 				start_box_thread();
-			}
 
 			break;
 		default:
