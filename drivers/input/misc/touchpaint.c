@@ -48,6 +48,7 @@ static int follow_box_size = 301;
 module_param(follow_box_size, int, 0644);
 /* Paint clear delay in ms. 0 = on next touch, -1 = never */
 static int paint_clear_delay = 0;
+module_param(paint_clear_delay, int, 0644);
 
 /* State */
 static u32 __iomem *fb_mem;
