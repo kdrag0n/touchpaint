@@ -6,6 +6,8 @@ Tap latency with Touchpaint has been measured to be as low as 10 ms — almost a
 
 This low latency is made possible by a custom minimal graphics stack that writes directly to the display's framebuffer as soon as a touchscreen interrupt is received. The display controller scans out the framebuffer directly on every vblank event and sends the pixels to the display immediately. Scheduling delays are minimized and no buffering or context switches are involved. The GPU is not used as it will increase latency for such simple rendering tasks like this.
 
+For equivalent touch latency testing on Android and iOS, check out the [Android](https://github.com/kdrag0n/touchpaint-android) and [Flutter](https://github.com/kdrag0n/touchpaint-flutter) apps.
+
 ## Requirements
 
 This module makes several assumptions:
